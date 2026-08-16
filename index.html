@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WalletAI – Smart Expense Tracker</title>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ===================== SPLASH / LOADING ===================== -->
+  <div id="splash-screen" class="splash-screen">
+    <div class="splash-logo">
+      <span class="splash-icon">💳</span>
+      <h1>WalletAI</h1>
+      <p>Smart Expense Tracker</p>
+    </div>
+    <div class="splash-loader"><div></div><div></div><div></div></div>
+  </div>
+
+  <!-- ===================== APP SHELL ===================== -->
+  <div id="app" class="app hidden">
+
+    <!-- ===== TOP NAV BAR ===== -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-logo">💳</span>
+        <span class="topbar-title">WalletAI</span>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+        <button class="icon-btn hidden" id="logout-btn" title="Logout" aria-label="Logout">🚪</button>
+        <div class="avatar" id="user-avatar" title="User">U</div>
+      </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT AREA ===== -->
+    <main class="main-content" id="main-content">
+
+      <!-- ============================================================
+           VIEW: DASHBOARD
+      ============================================================ -->
+      <section id="view-dashboard" class="view active">
+
+        <!-- AI Insight Banner -->
+        <div class="ai-banner" id="ai-banner">
+          <div class="ai-banner-icon">✨</div>
+          <div class="ai-banner-content">
+            <span class="ai-badge">Gemini AI</span>
+            <p id="ai-insight-text">Analysing your spending patterns…</p>
+          </div>
+          <button class="ai-banner-refresh" id="ai-refresh-btn" title="New insight" aria-label="Refresh AI insight">↻</button>
+        </div>
+
+        <!-- Balance Cards Row -->
+        <div class="section-header">
+          <h2>Overview</h2>
+          <span id="current-month-label" class="section-sub"></span>
+        </div>
+
+        <div class="balance-cards">
+          <div class="balance-card total-card">
+            <div class="card-label">Total Balance</div>
+            <div class="card-amount" id="balance-total">₹0.00</div>
+            <div class="card-meta" id="balance-meta">0 transactions</div>
+          </div>
+
+          <div class="balance-cards-row">
+            <div class="balance-card mini-card">
+              <div class="card-icon">💵</div>
+              <div class="card-label">Cash</div>
+              <div class="card-amount small" id="balance-cash">₹0.00</div>
+            </div>
+            <div class="balance-card mini-card">
+              <div class="card-icon">💳</div>
+              <div class="card-label">Cards</div>
+              <div class="card-amount small" id="balance-card">₹0.00</div>
+            </div>
+          </div>
+
+          <!-- Bank Accounts -->
+          <div class="bank-section">
+            <div class="bank-section-header">
+              <span>Bank Accounts</span>
+              <button class="btn-ghost btn-sm" id="add-bank-btn">+ Add</button>
+            </div>
+            <div id="bank-accounts-list" class="bank-accounts-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Area -->
+        <div class="section-header">
+          <h2>Spending Insights</h2>
+        </div>
+
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-title">By Category</span>
+              <span class="chart-subtitle">This month</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="pieChart" aria-label="Category spending pie chart"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-title">Monthly History</span>
+              <span class="chart-subtitle">Last 6 months</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="barChart" aria-label="Monthly spending bar chart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="section-header">
+          <h2>Recent Transactions</h2>
+          <button class="btn-ghost btn-sm" id="view-all-btn">View All</button>
+        </div>
+
+        <div id="transactions-list" class="transactions-list">
+          <!-- Populated by JS -->
+        </div>
+
+      </section>
+
+      <!-- ============================================================
+           VIEW: ADD EXPENSE
+      ============================================================ -->
+      <section id="view-add" class="view">
+
+        <div class="form-page-header">
+          <h2>Add Transaction</h2>
+          <p class="form-page-sub">Record a new expense or income</p>
+        </div>
+
+        <!-- Magic AI Input -->
+        <div class="magic-input-card">
+          <div class="magic-header">
+            <span class="magic-icon">🤖</span>
+            <div>
+              <div class="magic-title">Magic AI Input</div>
+              <div class="magic-sub">Describe your expense naturally</div>
+            </div>
+          </div>
+          <div class="magic-input-wrap">
+            <textarea
+              id="magic-input"
+              class="magic-textarea"
+              placeholder="e.g. &quot;Paid ₹250 for lunch at Zomato using UPI&quot;"
+              rows="2"
+              aria-label="Magic AI natural language input"
+            ></textarea>
+            <button class="btn-magic" id="magic-parse-btn" aria-label="Parse with AI">
+              <span>✨ Parse</span>
+            </button>
+          </div>
+          <div id="magic-status" class="magic-status hidden"></div>
+        </div>
+
+        <!-- OR Divider -->
+        <div class="or-divider"><span>or fill manually</span></div>
+
+        <!-- Expense Form -->
+        <form id="expense-form" class="expense-form" novalidate>
+
+          <!-- Type Toggle -->
+          <div class="type-toggle" role="group" aria-label="Transaction type">
+            <button type="button" class="type-btn active" data-type="expense">Expense</button>
+            <button type="button" class="type-btn" data-type="income">Income</button>
+            <button type="button" class="type-btn" data-type="transfer">Transfer</button>
+          </div>
+
+          <!-- Amount -->
+          <div class="form-group">
+            <label for="amount" class="form-label">Amount <span class="required">*</span></label>
+            <div class="amount-input-wrap">
+              <span class="currency-symbol">₹</span>
+              <input type="number" id="amount" name="amount" class="form-input amount-input"
+                placeholder="0.00" min="0" step="0.01" required aria-required="true" />
+            </div>
+          </div>
+
+          <!-- Category + Sub-category -->
+          <div class="form-group">
+            <label for="category" class="form-label">Category <span class="required">*</span></label>
+            <select id="category" name="category" class="form-select" required aria-required="true">
+              <option value="">— Select category —</option>
+              <option value="Food & Drinks">🍔 Food &amp; Drinks</option>
+              <option value="Shopping">🛍️ Shopping</option>
+              <option value="Housing">🏠 Housing / Rent</option>
+              <option value="Entertainment">🎬 Entertainment</option>
+              <option value="Recharge">📱 Recharge</option>
+              <option value="Education">📚 Education</option>
+              <option value="Transport">🚗 Transport</option>
+              <option value="Health">💊 Health</option>
+              <option value="Investments">💰Investments</option>
+              <option value="Lifestyle & Entertainment">🙎‍♂️Lifestyle & Entertainment</option>
+            </select>
+          </div>
+
+          <!-- Sub-category (dynamic) -->
+          <div class="form-group" id="subcategory-group" style="display:none;">
+            <label for="subcategory" class="form-label">Sub-category</label>
+            <select id="subcategory" name="subcategory" class="form-select" aria-label="Sub-category">
+              <option value="">— Select sub-category —</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <input type="text" id="description" name="description" class="form-input"
+              placeholder="e.g. Dinner at Pizza Hut" />
+          </div>
+
+          <!-- Date & Time -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="txn-date" class="form-label">Date <span class="required">*</span></label>
+              <input type="date" id="txn-date" name="txn-date" class="form-input" required aria-required="true" />
+            </div>
+            <div class="form-group flex-1">
+              <label for="txn-time" class="form-label">Time</label>
+              <input type="time" id="txn-time" name="txn-time" class="form-input" />
+            </div>
+          </div>
+
+          <!-- Payment Method -->
+          <div class="form-group">
+            <label for="payment-method" class="form-label">Payment Method <span class="required">*</span></label>
+            <select id="payment-method" name="payment-method" class="form-select" required aria-required="true">
+              <option value="Cash">💵 Cash</option>
+              <option value="Card">💳 Card</option>
+              <!-- Bank accounts added dynamically -->
+            </select>
+          </div>
+
+          <!-- Tags -->
+          <div class="form-group">
+            <label for="tags-input" class="form-label">Tags</label>
+            <div class="tags-input-wrap" id="tags-wrap">
+              <div id="tags-display" class="tags-display"></div>
+              <input type="text" id="tags-input" class="tags-input"
+                placeholder="Add tag + Enter" aria-label="Add tags" />
+            </div>
+            <p class="form-hint">Press Enter or comma to add a tag</p>
+          </div>
+
+          <!-- Scan Receipt Button -->
+          <div class="form-group">
+            <button type="button" class="btn-scan" id="scan-receipt-btn" aria-label="Scan receipt">
+              <span class="scan-icon">📷</span>
+              <span>Scan Receipt (OCR)</span>
+              <span class="scan-badge">Beta</span>
+            </button>
+            <input type="file" id="receipt-file-input" accept="image/*" class="hidden" aria-label="Upload receipt image" />
+            <div id="scan-status" class="scan-status hidden"></div>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-primary btn-full" id="submit-expense-btn">
+            💾 Save Transaction
+          </button>
+
+        </form>
+
+      </section>
+
+      <!-- ============================================================
+           VIEW: ALL TRANSACTIONS
+      ============================================================ -->
+      <section id="view-transactions" class="view">
+        <div class="form-page-header">
+          <h2>All Transactions</h2>
+          <div class="filter-row">
+            <select id="filter-category" class="form-select form-select-sm" aria-label="Filter by category">
+              <option value="">All Categories</option>
+            </select>
+            <select id="filter-method" class="form-select form-select-sm" aria-label="Filter by payment method">
+              <option value="">All Methods</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+            </select>
+          </div>
+        </div>
+        <div id="all-transactions-list" class="transactions-list"></div>
+      </section>
+
+    </main>
+
+    <!-- ===== BOTTOM NAV ===== -->
+    <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+      <button class="nav-btn active" data-view="dashboard" aria-label="Dashboard">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Home</span>
+      </button>
+      <button class="nav-btn" data-view="add" aria-label="Add expense">
+        <span class="nav-fab">+</span>
+      </button>
+      <button class="nav-btn" data-view="transactions" aria-label="Transactions">
+        <span class="nav-icon">📋</span>
+        <span class="nav-label">History</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- ===================== MODALS ===================== -->
+
+  <!-- Add Bank Account Modal -->
+  <div id="modal-bank" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-bank-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-bank-title">Add Bank Account</h3>
+        <button class="modal-close" id="modal-bank-close" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="bank-name" class="form-label">Bank Name <span class="required">*</span></label>
+          <input type="text" id="bank-name" class="form-input" placeholder="e.g. HDFC Savings" />
+        </div>
+        <div class="form-group">
+          <label for="bank-balance" class="form-label">Current Balance (₹)</label>
+          <input type="number" id="bank-balance" class="form-input" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label for="bank-color" class="form-label">Accent Color</label>
+          <input type="color" id="bank-color" class="form-input color-input" value="#6C63FF" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="modal-bank-cancel">Cancel</button>
+        <button class="btn-primary" id="modal-bank-save">Add Account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction Detail Modal -->
+  <div id="modal-txn" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-txn-title">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-txn-title">Transaction Details</h3>
+        <button class="modal-close" id="modal-txn-close" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body" id="modal-txn-body"></div>
+      <div class="modal-footer">
+        <button class="btn-danger" id="modal-txn-delete">🗑 Delete</button>
+        <button class="btn-ghost" id="modal-txn-ok">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden" role="alert" aria-live="polite"></div>
+
+  <!-- ===================== AUTH MODAL ===================== -->
+  <div id="modal-auth" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="modal-box auth-modal-box">
+      <div class="auth-logo">
+        <span style="font-size:36px">💳</span>
+        <h2 id="auth-modal-title">WalletAI</h2>
+        <p>Sign in to sync your data across devices</p>
+      </div>
+
+      <!-- Tab switcher -->
+      <div class="type-toggle auth-tabs">
+        <button type="button" class="type-btn active" id="tab-login">Login</button>
+        <button type="button" class="type-btn" id="tab-register">Register</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="expense-form">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="login-email" class="form-input" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" required />
+        </div>
+        <div id="login-error" class="auth-error hidden"></div>
+        <button type="submit" class="btn-primary btn-full">🔑 Login</button>
+        <button type="button" class="btn-ghost btn-full" id="skip-auth-btn" style="margin-top:8px">
+          Continue without account (offline mode)
+        </button>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="expense-form hidden">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="register-name" class="form-input" placeholder="Your name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="register-email" class="form-input" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="register-password" class="form-input" placeholder="Min 8 characters" required minlength="8" />
+        </div>
+        <div id="register-error" class="auth-error hidden"></div>
+        <button type="submit" class="btn-primary btn-full">🚀 Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
