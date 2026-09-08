@@ -2,12 +2,17 @@
 app/routers/auth.py
 ────────────────────
 User registration and login endpoints.
+
+Rate limits (brute-force protection):
+  - POST /login    → 10 requests / minute per IP
+  - POST /register → 5  requests / minute per IP
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_db
+from app.core.limiter import limiter
 from app.core.security import create_access_token, hash_password, verify_password
 from app.models.user import User
 from app.repositories.user import UserRepository
@@ -17,8 +22,16 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
-    """Register a new user account."""
+@limiter.limit("5/minute")
+async def register(
+    request: Request,           # required by slowapi to extract client IP
+    payload: UserCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Register a new user account.
+    Rate limited to 5 registrations per minute per IP.
+    """
     repo = UserRepository(db)
 
     if await repo.get_by_email(payload.email):
@@ -37,8 +50,16 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
-    """Authenticate and receive a JWT access token."""
+@limiter.limit("10/minute")
+async def login(
+    request: Request,           # required by slowapi to extract client IP
+    payload: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Authenticate and receive a JWT access token.
+    Rate limited to 10 attempts per minute per IP to prevent brute-force.
+    """
     repo = UserRepository(db)
     user = await repo.get_by_email(payload.email)
 

@@ -1,0 +1,65 @@
+# .dockerignore
+# ──────────────
+# Prevents these paths from being sent to the Docker build context.
+# Keeps images smaller, faster to build, and free of secrets/dev noise.
+
+# ── Secrets — NEVER copy into an image ────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Python cache & compiled files ─────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+
+# ── Virtual environments ───────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Tests — not needed at runtime ─────────────────────────
+tests/
+.pytest_cache/
+htmlcov/
+.coverage
+.mypy_cache/
+
+# ── Git ────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Editor / OS noise ─────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Docker files themselves ────────────────────────────────
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# ── Docs and dev-only scripts ──────────────────────────────
+README.md
+scripts/
+
+# ── Alembic migration history (baked in at runtime via CMD) ─
+# Keep alembic/ included so migrations run at container start.
+# Only exclude the versions cache if present.
+alembic/versions/__pycache__/
+
+# ── Misc ───────────────────────────────────────────────────
+*.log
+*.sqlite3
+*.db
+.python-version

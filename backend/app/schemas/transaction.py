@@ -29,7 +29,7 @@ class TransactionRead(BaseModel):
     note: str | None
     tags: list[str]
     date: datetime
-    created_at: datetime
+    created_at: datetime | None = None  # None-safe: set on create, always present after DB refresh
 
     # Nested readable names (populated via join)
     category_name: str | None = None

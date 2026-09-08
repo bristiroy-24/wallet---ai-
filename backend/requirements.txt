@@ -1,4 +1,5 @@
 # ── Web Framework ──────────────────────────────────────────
+# Requires Python 3.12.0 (matches Dockerfile and .python-version)
 fastapi>=0.111.1
 uvicorn[standard]>=0.30.1
 
@@ -13,7 +14,8 @@ pydantic[email]>=2.8.2
 pydantic-settings>=2.3.4
 
 # ── Auth ────────────────────────────────────────────────────
-passlib[bcrypt]>=1.7.4
+# bcrypt: used directly in security.py (passlib removed — broken on Python 3.12)
+bcrypt>=4.2.1
 python-jose[cryptography]>=3.3.0
 python-multipart>=0.0.9
 
@@ -27,3 +29,12 @@ Pillow>=10.4.0
 # ── Utilities ───────────────────────────────────────────────
 python-dateutil>=2.9.0
 httpx>=0.27.0
+
+# ── Rate limiting ────────────────────────────────────────────
+slowapi==0.1.9
+
+# ── Testing ──────────────────────────────────────────────────
+pytest==8.3.2
+pytest-asyncio==0.24.0
+httpx==0.27.0
+aiosqlite==0.20.0

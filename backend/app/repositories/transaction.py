@@ -83,8 +83,15 @@ class TransactionRepository(BaseRepository[Transaction]):
         self, user_id: UUID
     ) -> list[tuple[str, str | None, Decimal]]:
         """
-        Returns (category_name, category_color, total_amount) for expenses
-        in the current calendar month. Used for the Pie Chart.
+        Returns tuples of (category_name, category_color, total_spend)
+        for EXPENSE transactions in the current calendar month.
+
+        Tuple field order matches CategoryBreakdown schema construction:
+          index 0 → category_name  (str)
+          index 1 → color          (str | None)
+          index 2 → total          (Decimal)
+
+        Used for the Pie Chart on the dashboard.
         """
         now = datetime.now(timezone.utc)
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -134,3 +141,35 @@ class TransactionRepository(BaseRepository[Transaction]):
             .order_by("year", "month")
         )
         return result.all()  # type: ignore[return-value]
+
+    async def all_time_totals(
+        self, user_id: UUID
+    ) -> tuple[Decimal, Decimal]:
+        """
+        Returns (total_income, total_expense) for all time via SQL SUM+CASE.
+        Never loads ORM objects into Python — O(1) regardless of history size.
+        """
+        result = await self.db.execute(
+            select(
+                func.coalesce(
+                    func.sum(
+                        func.case(
+                            (Transaction.type == TransactionType.INCOME, Transaction.amount),
+                            else_=0,
+                        )
+                    ),
+                    Decimal("0"),
+                ).label("income"),
+                func.coalesce(
+                    func.sum(
+                        func.case(
+                            (Transaction.type == TransactionType.EXPENSE, Transaction.amount),
+                            else_=0,
+                        )
+                    ),
+                    Decimal("0"),
+                ).label("expense"),
+            ).where(Transaction.user_id == user_id)
+        )
+        row = result.one()
+        return Decimal(str(row.income)), Decimal(str(row.expense))

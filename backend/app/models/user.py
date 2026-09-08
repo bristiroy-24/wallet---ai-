@@ -30,5 +30,6 @@ class User(Base):
     )
 
     # Relationships
-    accounts = relationship("Account", back_populates="user", cascade="all, delete-orphan")
-    insights = relationship("AIInsight", back_populates="user", cascade="all, delete-orphan")
+    accounts     = relationship("Account",     back_populates="user", cascade="all, delete-orphan")
+    transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
+    insights     = relationship("AIInsight",   back_populates="user", cascade="all, delete-orphan")

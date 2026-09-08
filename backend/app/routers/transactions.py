@@ -114,6 +114,7 @@ async def create_transaction(
         note=payload.note,
         tags=payload.tags,
         date=payload.date or datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc),  # set explicitly — never None after create
     )
     created = await repo.create(txn)
     return _txn_to_read(created)

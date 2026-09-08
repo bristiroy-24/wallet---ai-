@@ -1,6 +1,7 @@
-FROM python:3.12-slim
+FROM python:3.12.0-slim
 
-# System dependencies for Pillow and psycopg2
+# System dependencies for Pillow and asyncpg
+# libpq-dev: PostgreSQL client headers (kept for potential psycopg2 use)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libpq-dev libjpeg-dev zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*

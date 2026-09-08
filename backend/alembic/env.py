@@ -18,8 +18,19 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 # Load app config for DATABASE_URL
 from app.core.config import settings
 
-# Import Base so Alembic can detect model changes in autogenerate
-from app.db.base import Base  # noqa: F401 (all models imported there)
+# Import Base
+from app.db.base import Base
+
+# EXPLICITLY import all model files here:
+from app.models.user import User  # noqa: F401
+from app.models.account import Account  # noqa: F401
+from app.models.category import Category  # noqa: F401
+from app.models.transaction import Transaction  # noqa: F401
+from app.models.ai_insight import AIInsight  # noqa: F401 (or whatever your AI insight model filename/class is)
+
+target_metadata = Base.metadata
+
+
 
 # ── Alembic Config object ─────────────────────────────────────────────────────
 config = context.config

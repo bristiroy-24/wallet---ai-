@@ -1,11 +1,16 @@
 """
 app/services/analytics_service.py
 ───────────────────────────────────
-Computes dashboard analytics by aggregating data from multiple
-repositories. Keeps all business logic out of the routers.
+Computes dashboard analytics by aggregating data via repositories.
+
+Design notes:
+  - All DB aggregation is pushed down to SQL (never Python-side summation
+    over large result sets).
+  - Field names match DashboardSchema, CategoryBreakdown, MonthlyTrend,
+    and AccountSummary exactly — schemas/ai.py is the canonical contract.
+  - Routers instantiate this service; no repo calls happen in routers.
 """
 
-from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -13,7 +18,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.account import AccountRepository
 from app.repositories.transaction import TransactionRepository
-from app.schemas.ai import CategoryBreakdown, DashboardSchema, MonthlyTrend
+from app.schemas.ai import (
+    AccountSummary,
+    CategoryBreakdown,
+    DashboardSchema,
+    MonthlyTrend,
+)
 
 
 class AnalyticsService:
@@ -22,55 +32,67 @@ class AnalyticsService:
         self._account_repo = AccountRepository(db)
 
     async def get_dashboard(self, user_id: UUID) -> DashboardSchema:
-        accounts      = await self._account_repo.list_by_user(user_id)
-        cat_totals    = await self._txn_repo.category_totals_this_month(user_id)
-        monthly_data  = await self._txn_repo.monthly_totals(user_id, months=6)
+        """
+        Returns all data needed by the frontend dashboard in one call:
+          - Account list with balances
+          - This-month category breakdown (Pie Chart)
+          - Last-6-month income/expense trends (Bar Chart)
+          - Net balance, total income, total expense (all-time, via SQL)
+        """
+        accounts     = await self._account_repo.list_by_user(user_id)
+        cat_totals   = await self._txn_repo.category_totals_this_month(user_id)
+        monthly_data = await self._txn_repo.monthly_totals(user_id, months=6)
 
-        # Net balance = sum of all account balances
-        net_balance = float(sum(a.balance for a in accounts))
+        # ── Net balance: sum of account balances (no transaction scan) ────────
+        net_balance = sum((a.balance for a in accounts), Decimal("0"))
 
-        # Aggregate income / expense from all-time transactions
-        all_txns = await self._txn_repo.list_by_user(user_id, limit=1000)
-        total_income  = sum(float(t.amount) for t in all_txns if t.type.value == "INCOME")
-        total_expense = sum(float(t.amount) for t in all_txns if t.type.value == "EXPENSE")
+        # ── All-time income/expense via SQL aggregation (not Python sum) ──────
+        # monthly_totals covers all history when months is large enough;
+        # for all-time we use a dedicated repo method.
+        income_total, expense_total = await self._txn_repo.all_time_totals(user_id)
 
-        # Category breakdown for Pie Chart
+        # ── Category breakdown (Pie Chart) ────────────────────────────────────
         category_breakdown = [
             CategoryBreakdown(
                 category_name=name,
-                total=float(total),
+                total=Decimal(str(total or 0)),
                 color=color,
             )
             for name, color, total in cat_totals
         ]
 
-        # Monthly trends for Bar Chart
-        _MONTHS = ["Jan","Feb","Mar","Apr","May","Jun",
-                   "Jul","Aug","Sep","Oct","Nov","Dec"]
+        # ── Monthly trends (Bar Chart) ────────────────────────────────────────
+        _MONTHS = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+        ]
         monthly_trends = [
             MonthlyTrend(
                 month=f"{_MONTHS[int(month) - 1]} {int(year)}",
-                total_expense=float(expense or Decimal("0")),
-                total_income=float(income or Decimal("0")),
+                total_expense=Decimal(str(expense or 0)),
+                total_income=Decimal(str(income or 0)),
             )
             for year, month, expense, income in monthly_data
         ]
 
+        # ── Accounts list ─────────────────────────────────────────────────────
+        account_summaries = [
+            AccountSummary(
+                id=str(a.id),
+                name=a.name,
+                type=a.type.value,
+                balance=a.balance,
+                currency=a.currency,
+                color=a.color,
+            )
+            for a in accounts
+        ]
+
         return DashboardSchema(
             net_balance=net_balance,
-            total_income=total_income,
-            total_expense=total_expense,
-            accounts=[
-                {
-                    "id":       str(a.id),
-                    "name":     a.name,
-                    "type":     a.type.value,
-                    "balance":  float(a.balance),
-                    "currency": a.currency,
-                    "color":    a.color,
-                }
-                for a in accounts
-            ],
+            total_income=income_total,
+            total_expense=expense_total,
+            accounts=account_summaries,
             category_breakdown=category_breakdown,
             monthly_trends=monthly_trends,
         )
