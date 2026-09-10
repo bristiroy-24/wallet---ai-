@@ -202,14 +202,15 @@
               <option value="">— Select category —</option>
               <option value="Food & Drinks">🍔 Food &amp; Drinks</option>
               <option value="Shopping">🛍️ Shopping</option>
-              <option value="Housing">🏠 Housing / Rent</option>
+              <option value="Housing">🏠 Housing</option>
               <option value="Entertainment">🎬 Entertainment</option>
               <option value="Recharge">📱 Recharge</option>
               <option value="Education">📚 Education</option>
               <option value="Transport">🚗 Transport</option>
               <option value="Health">💊 Health</option>
-              <option value="Investments">💰Investments</option>
-              <option value="Lifestyle & Entertainment">🙎‍♂️Lifestyle & Entertainment</option>
+              <option value="Investments">💰 Investments</option>
+              <option value="Lifestyle">🙎 Lifestyle</option>
+              <option value="Other">📦 Other</option>
             </select>
           </div>
 
@@ -420,7 +421,19 @@
     </div>
   </div>
 
+  <!-- Core API client (must load first) -->
   <script src="api.js"></script>
+
+  <!-- App modules — load in dependency order -->
+  <script src="js/config.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/bridge.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/forms.js"></script>
+  <script src="js/modals.js"></script>
+
+  <!-- Boot (entry point — runs after all modules are loaded) -->
   <script src="app.js"></script>
 </body>
 </html>

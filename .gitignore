@@ -14,9 +14,17 @@ venv/
 env/
 
 # ── Environment Variables ──────────────────────────────────
+# NEVER commit .env files — they contain secrets (DB passwords, API keys, JWT secrets).
+# Copy backend/.env.example → backend/.env and fill in real values locally.
 .env
 .env.local
 .env.production
+.env.staging
+.env.development
+.env.test
+**/.env
+**/.env.*
+!**/.env.example
 
 # ── IDE / Editor ───────────────────────────────────────────
 .vscode/
