@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -127,10 +127,10 @@ class TransactionRepository(BaseRepository[Transaction]):
                 func.extract("year",  Transaction.date).label("year"),
                 func.extract("month", Transaction.date).label("month"),
                 func.sum(
-                    func.case((Transaction.type == TransactionType.EXPENSE,  Transaction.amount), else_=0)
+                    case((Transaction.type == TransactionType.EXPENSE,  Transaction.amount), else_=0)
                 ).label("expense"),
                 func.sum(
-                    func.case((Transaction.type == TransactionType.INCOME, Transaction.amount), else_=0)
+                    case((Transaction.type == TransactionType.INCOME, Transaction.amount), else_=0)
                 ).label("income"),
             )
             .where(
@@ -153,7 +153,7 @@ class TransactionRepository(BaseRepository[Transaction]):
             select(
                 func.coalesce(
                     func.sum(
-                        func.case(
+                        case(
                             (Transaction.type == TransactionType.INCOME, Transaction.amount),
                             else_=0,
                         )
@@ -162,7 +162,7 @@ class TransactionRepository(BaseRepository[Transaction]):
                 ).label("income"),
                 func.coalesce(
                     func.sum(
-                        func.case(
+                        case(
                             (Transaction.type == TransactionType.EXPENSE, Transaction.amount),
                             else_=0,
                         )
