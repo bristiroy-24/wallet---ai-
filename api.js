@@ -125,7 +125,7 @@ async function checkBackendAvailable() {
     const timeout = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('timeout')), 3000)
     );
-    const fetchPromise = fetch('http://127.0.0.1:8000/health', {
+    const fetchPromise = fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
       cache: 'no-cache',
     });
