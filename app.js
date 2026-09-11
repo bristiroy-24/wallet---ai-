@@ -21,9 +21,9 @@
 async function init() {
   loadLocalState();
 
-  const backendUp = await checkBackendAvailable();
-
-  if (backendUp && auth.isAuthenticated()) {
+  if (auth.isAuthenticated()) {
+    // Token exists — try to restore session directly (skip health check so
+    // Render cold-start delay doesn't wrongly show the login modal)
     try {
       const [txns, accs] = await Promise.all([apiFetchTransactions(), apiFetchAccounts()]);
       setState({
@@ -33,15 +33,20 @@ async function init() {
       });
       showToast('Session restored ●', 'success', 2000);
     } catch(e) {
+      // Token invalid or expired — clear it and show login
       auth.removeToken();
       setState({ isOnline: false });
       showAuthModal();
     }
-  } else if (backendUp && !auth.isAuthenticated()) {
-    showAuthModal();
   } else {
-    seedDemoData();
-    showToast('Backend offline – running in local mode 📴', 'info', 4000);
+    // No token — check if backend is up to decide online vs offline mode
+    const backendUp = await checkBackendAvailable();
+    if (backendUp) {
+      showAuthModal();
+    } else {
+      seedDemoData();
+      showToast('Backend offline – running in local mode 📴', 'info', 4000);
+    }
   }
 
   initTheme();
