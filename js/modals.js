@@ -40,7 +40,6 @@ function initAuthModal() {
     errEl.classList.add('hidden');
     btn.disabled = true; btn.textContent = '⏳ Logging in…';
     try {
-      if (!await checkBackendAvailable()) throw new Error('Server not reachable. Double-click start-backend.bat to start it.');
       const user = await apiLogin(email, password);
       setState({ isOnline: true, currentUser: user });
       _categoryCache = null; _accountCache = null;
@@ -64,7 +63,6 @@ function initAuthModal() {
     errEl.classList.add('hidden');
     btn.disabled = true; btn.textContent = '⏳ Creating account…';
     try {
-      if (!await checkBackendAvailable()) throw new Error('Server not reachable. Double-click start-backend.bat to start it.');
       const user = await apiRegister(email, password, name);
       setState({ isOnline: true, currentUser: user });
       _categoryCache = null; _accountCache = null;
