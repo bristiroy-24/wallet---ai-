@@ -33,10 +33,17 @@ async function init() {
       });
       showToast('Session restored ●', 'success', 2000);
     } catch(e) {
-      // Token invalid or expired — clear it and show login
-      auth.removeToken();
-      setState({ isOnline: false });
-      showAuthModal();
+      if (e.message === 'SESSION_EXPIRED') {
+        // Token is genuinely invalid/expired — clear and force login
+        auth.removeToken();
+        setState({ isOnline: false });
+        showAuthModal();
+      } else {
+        // Network error (Render cold start, timeout, etc.) — keep the token,
+        // load cached local state and let the user continue
+        setState({ isOnline: false });
+        showToast('Backend waking up… data may be stale. Refresh in a moment. ⏳', 'info', 6000);
+      }
     }
   } else {
     // No token — check if backend is up to decide online vs offline mode
