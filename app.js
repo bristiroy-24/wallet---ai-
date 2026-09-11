@@ -22,8 +22,9 @@ async function init() {
   loadLocalState();
 
   if (auth.isAuthenticated()) {
-    // Token exists — try to restore session directly (skip health check so
-    // Render cold-start delay doesn't wrongly show the login modal)
+    // Token exists — hide login modal immediately, then restore session
+    // (skip health check so Render cold-start doesn't wrongly show login)
+    hideAuthModal();
     try {
       const [txns, accs] = await Promise.all([apiFetchTransactions(), apiFetchAccounts()]);
       setState({
