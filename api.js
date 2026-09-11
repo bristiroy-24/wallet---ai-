@@ -8,7 +8,7 @@
 
 'use strict';
 
-const API_BASE_URL = "https://wallet-ai-04ej.onrender.com";
+const API_BASE_URL = "https://wallet-ai-04ej.onrender.com/api/v1";
 
 /* ── Token management ─────────────────────────────────── */
 const auth = {
